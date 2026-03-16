@@ -6,6 +6,7 @@ const SUPABASE_PUBLISHABLE_KEY =
 const EVENT_SLUG = "krvava-hodina-2026-03-23";
 const CONTACT_URL = "https://www.facebook.com/ondra.d.ulrich/";
 const CONTACT_LABEL = "https://www.facebook.com/ondra.d.ulrich/";
+const FULL_PAGE_URL = new URL("full.html", window.location.href).toString();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
@@ -46,6 +47,31 @@ function setSubmitting(isSubmitting) {
   submitButton.textContent = isSubmitting
     ? "Ukládám přihlášku..."
     : "Přihlásit se na Krvavou hodinu";
+}
+
+function redirectToFullPage() {
+  window.location.replace(FULL_PAGE_URL);
+}
+
+function isEventFullError(error) {
+  return error?.code === "P0001" && error?.message === "EVENT_FULL";
+}
+
+async function refreshRegistrationStatus() {
+  const { data, error } = await supabase.rpc("get_event_registration_status", {
+    target_event_slug: EVENT_SLUG,
+  });
+
+  if (error) {
+    console.error("Failed to fetch registration status:", error);
+    return null;
+  }
+
+  if (data?.is_full) {
+    redirectToFullPage();
+  }
+
+  return data;
 }
 
 function normalizeName(value) {
@@ -104,6 +130,11 @@ form?.addEventListener("submit", async (event) => {
         return;
       }
 
+      if (isEventFullError(error)) {
+        redirectToFullPage();
+        return;
+      }
+
       setStatus(
         "Přihlášku se nepodařilo uložit. Zkus to prosím za chvíli znovu.",
         "error",
@@ -127,3 +158,5 @@ form?.addEventListener("submit", async (event) => {
     setSubmitting(false);
   }
 });
+
+refreshRegistrationStatus();

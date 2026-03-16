@@ -6,12 +6,14 @@ Jednostránková registrační stránka pro akci **Krvavá hodina**. Je navržen
 
 - minimalistická landing page v temném stylu s akcentem na Blood on the Clocktower
 - formulář pro uložení `jméno + e-mail` do Supabase
+- automatické ukončení registrace po naplnění kapacity 15 lidí
 - ochrana přes RLS, takže veřejný klient může pouze vkládat registrace
 - placeholder kontakt, kam si doplníš vlastní Facebook URL
 
 ## Soubory
 
 - `index.html`: obsah stránky
+- `full.html`: stav po naplnění kapacity
 - `styles.css`: vzhled
 - `app.js`: Supabase klient a odeslání formuláře
 - `supabase.sql`: SQL pro vytvoření tabulky a policy

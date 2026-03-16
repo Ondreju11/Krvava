@@ -99,6 +99,11 @@ body::before {
   animation: rise 700ms ease both;
 }
 
+.layout--single {
+  width: min(860px, 100%);
+  grid-template-columns: 1fr;
+}
+
 .hero-card,
 .signup-card {
   position: relative;
@@ -108,6 +113,18 @@ body::before {
 
 .hero-card {
   padding: 48px;
+}
+
+.soldout-card {
+  min-height: min(78vh, 760px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.soldout-lede,
+.soldout-copy {
+  max-width: 38rem;
 }
 
 .hero-card::after,
