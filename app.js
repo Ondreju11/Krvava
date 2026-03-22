@@ -21,6 +21,8 @@ const form = document.querySelector("#signup-form");
 const submitButton = document.querySelector("#submit-button");
 const statusElement = document.querySelector("#form-status");
 const contactLink = document.querySelector("#contact-link");
+const capacityCountElement = document.querySelector("#capacity-count");
+const capacityCopyElement = document.querySelector("#capacity-copy");
 const currentPage = document.body?.dataset.page ?? "signup";
 const isFullPage = currentPage === "full";
 
@@ -36,6 +38,10 @@ if (contactLink) {
 }
 
 function setStatus(message, state = "") {
+  if (!statusElement) {
+    return;
+  }
+
   statusElement.textContent = message;
 
   if (state) {
@@ -64,6 +70,32 @@ function isEventFullError(error) {
   return error?.code === "P0001" && error?.message === "EVENT_FULL";
 }
 
+function updateCapacityStatus(data) {
+  if (!capacityCountElement || !capacityCopyElement || !data) {
+    return;
+  }
+
+  const registeredCount = Number(data.registered_count ?? 0);
+  const registrationLimit = Number(data.registration_limit ?? 0);
+  const remainingSpots = Number(
+    data.remaining_spots ?? Math.max(registrationLimit - registeredCount, 0),
+  );
+
+  capacityCountElement.textContent = `${registeredCount}/${registrationLimit}`;
+
+  if (data.is_full) {
+    capacityCopyElement.textContent = "kapacita je právě naplněná";
+    return;
+  }
+
+  if (remainingSpots === 1) {
+    capacityCopyElement.textContent = "zbývá poslední volné místo";
+    return;
+  }
+
+  capacityCopyElement.textContent = `zbývá ${remainingSpots} volných míst`;
+}
+
 async function refreshRegistrationStatus() {
   const { data, error } = await supabase.rpc("get_event_registration_status", {
     target_event_slug: EVENT_SLUG,
@@ -81,6 +113,8 @@ async function refreshRegistrationStatus() {
   if (!data?.is_full && isFullPage) {
     redirectToSignupPage();
   }
+
+  updateCapacityStatus(data);
 
   return data;
 }
@@ -159,6 +193,7 @@ form?.addEventListener("submit", async (event) => {
       "Hotovo. Přihláška je uložená, těšíme se na tebe 23. 3. 2026 v 19:00.",
       "success",
     );
+    await refreshRegistrationStatus();
   } catch (error) {
     setStatus(
       "Spojení se nepodařilo navázat. Zkus to prosím za chvíli znovu.",
