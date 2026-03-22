@@ -7,6 +7,7 @@ const EVENT_SLUG = "krvava-hodina-2026-03-23";
 const CONTACT_URL = "https://www.facebook.com/ondra.d.ulrich/";
 const CONTACT_LABEL = "https://www.facebook.com/ondra.d.ulrich/";
 const FULL_PAGE_URL = new URL("full.html", window.location.href).toString();
+const SIGNUP_PAGE_URL = new URL("index.html", window.location.href).toString();
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
@@ -20,6 +21,8 @@ const form = document.querySelector("#signup-form");
 const submitButton = document.querySelector("#submit-button");
 const statusElement = document.querySelector("#form-status");
 const contactLink = document.querySelector("#contact-link");
+const currentPage = document.body?.dataset.page ?? "signup";
+const isFullPage = currentPage === "full";
 
 if (contactLink) {
   contactLink.textContent = CONTACT_LABEL;
@@ -53,6 +56,10 @@ function redirectToFullPage() {
   window.location.replace(FULL_PAGE_URL);
 }
 
+function redirectToSignupPage() {
+  window.location.replace(SIGNUP_PAGE_URL);
+}
+
 function isEventFullError(error) {
   return error?.code === "P0001" && error?.message === "EVENT_FULL";
 }
@@ -67,8 +74,12 @@ async function refreshRegistrationStatus() {
     return null;
   }
 
-  if (data?.is_full) {
+  if (data?.is_full && !isFullPage) {
     redirectToFullPage();
+  }
+
+  if (!data?.is_full && isFullPage) {
+    redirectToSignupPage();
   }
 
   return data;
