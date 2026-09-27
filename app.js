@@ -3,7 +3,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = "https://jlflfwjmtaxmnuzmupne.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_O7FLqxVxwnsBqRMoNS-fjQ_h2jETQuO";
-const EVENT_SLUG = "krvava-hodina-2026-03-23";
+const EVENT_SLUG = "krvava-hodina-2026-10-20";
 const CONTACT_URL = "https://www.facebook.com/ondra.d.ulrich/";
 const CONTACT_LABEL = "https://www.facebook.com/ondra.d.ulrich/";
 const FULL_PAGE_URL = new URL("full.html", window.location.href).toString();
@@ -135,9 +135,12 @@ form?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const formData = new FormData(form);
-  const fullName = normalizeName(formData.get("fullName")?.toString() ?? "");
-  const email = normalizeEmail(formData.get("email")?.toString() ?? "");
-  const honeypot = formData.get("website")?.toString().trim() ?? "";
+  const nameValue = formData.get("fullName");
+  const emailValue = formData.get("email");
+  const websiteValue = formData.get("website");
+  const fullName = normalizeName(typeof nameValue === "string" ? nameValue : "");
+  const email = normalizeEmail(typeof emailValue === "string" ? emailValue : "");
+  const honeypot = typeof websiteValue === "string" ? websiteValue.trim() : "";
 
   if (honeypot) {
     setStatus("Formulář nebylo možné odeslat.", "error");
@@ -190,7 +193,7 @@ form?.addEventListener("submit", async (event) => {
 
     form.reset();
     setStatus(
-      "Hotovo. Přihláška je uložená, těšíme se na tebe 23. 3. 2026 v 19:00.",
+      "Hotovo. Přihláška je uložená, těšíme se na tebe 20. 10. 2026 v 18:15.",
       "success",
     );
     await refreshRegistrationStatus();
@@ -205,4 +208,4 @@ form?.addEventListener("submit", async (event) => {
   }
 });
 
-refreshRegistrationStatus();
+void refreshRegistrationStatus();

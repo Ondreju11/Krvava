@@ -1,3 +1,7 @@
+-- Opakování 20. 10. 2026 v 18:15 (Europe/Prague), kapacita 15.
+-- Spouštěj celý skript. Starší registrace zůstávají uložené pod původním event_slug.
+begin;
+
 create extension if not exists pgcrypto;
 create extension if not exists citext with schema extensions;
 
@@ -75,7 +79,7 @@ declare
   registration_limit constant integer := 15;
   registered_count integer;
 begin
-  if target_event_slug <> 'krvava-hodina-2026-03-23' then
+  if target_event_slug <> 'krvava-hodina-2026-10-20' then
     raise exception
       using
         errcode = 'P0001',
@@ -110,7 +114,9 @@ create policy "Public can insert event registrations"
   for insert
   to anon, authenticated
   with check (
-    event_slug = 'krvava-hodina-2026-03-23'
+    event_slug = 'krvava-hodina-2026-10-20'
     and char_length(trim(full_name)) between 2 and 120
     and email::text ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'
   );
+
+commit;

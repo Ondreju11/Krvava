@@ -20,10 +20,27 @@ Jednostránková registrační stránka pro akci **Krvavá hodina**. Je navržen
 
 ## Nastavení Supabase
 
+Aktuální termín je **20. 10. 2026 od 18:15**, kapacita **15 lidí**.
+Registrace používají nový identifikátor `krvava-hodina-2026-10-20`.
+Staré registrace zůstávají v databázi pod původním identifikátorem a nepočítají
+se do nové kapacity. Stejný e-mail se může přihlásit na nový termín.
+
 1. V Supabase otevři SQL Editor.
 2. Spusť obsah souboru `supabase.sql`.
 3. Zkontroluj, že se vytvořila tabulka `public.event_registrations`.
 4. Registrace pak uvidíš v Table Editoru.
+
+Skript je možné spustit i nad stávající databází; aktualizuje funkce a pravidla
+v jedné transakci, nemaže registrace. Spusť jej před zveřejněním nové verze webu.
+Původní termín poté již nepřijímá registrace.
+
+Po aktualizaci ověř v SQL Editoru:
+
+```sql
+select public.get_event_registration_status('krvava-hodina-2026-10-20');
+```
+
+Výsledek má mít limit 15 a počet registrací jen pro říjnový termín.
 
 Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na RLS policy v databázi. Nepoužívej ve frontendu service role key.
 
@@ -39,6 +56,12 @@ const CONTACT_LABEL = "Doplnit Facebook URL";
 Jakmile doplníš reálný odkaz, tlačítko v kontaktu začne fungovat jako externí link.
 
 ## GitHub Pages
+
+Cílová adresa je `https://akce.psynaffuk.cz/krvava/`. Produkční soubory
+`index.html`, `full.html`, `styles.css` a `app.js` jsou také v repozitáři
+`Ondreju11/Psyna_kalendar` ve složce `public/krvava`. Nasazují se společně
+s kalendářem jeho stávajícím workflow. DNS ani nastavení domény se nemění.
+Při dalších úpravách aktualizuj i tuto produkční kopii.
 
 Protože je to čistý statický web, stačí repozitář pushnout na GitHub a zapnout Pages nad rootem nebo nad branchí, kde tyto soubory leží.
 
