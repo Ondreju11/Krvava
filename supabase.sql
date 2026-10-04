@@ -3,7 +3,6 @@
 -- Spouštěj celý skript. Starší registrace zůstávají uložené pod původním event_slug.
 begin;
 
-create extension if not exists pgcrypto;
 create extension if not exists citext with schema extensions;
 
 create table if not exists public.event_registrations (
@@ -93,7 +92,6 @@ as $$
 declare
   registration_limit constant integer := 15;
   registered_count integer;
-  waitlist_count integer;
 begin
   if target_event_slug <> 'krvava-hodina-2026-10-20' then
     raise exception
@@ -102,40 +100,36 @@ begin
         message = 'EVENT_NOT_AVAILABLE';
   end if;
 
-  select count(*) filter (where status = 'registered'),
-         count(*) filter (where status = 'waitlist')
-    into registered_count, waitlist_count
+  select count(*)
+    into registered_count
     from public.event_registrations
-   where event_slug = target_event_slug;
+   where event_slug = target_event_slug
+     and status = 'registered';
 
   return jsonb_build_object(
     'event_slug', target_event_slug,
     'registration_limit', registration_limit,
     'registered_count', registered_count,
-    'waitlist_count', waitlist_count,
     'remaining_spots', greatest(registration_limit - registered_count, 0),
     'is_full', registered_count >= registration_limit
   );
 end;
 $$;
 
--- Jediný vstup pro frontend: uloží přihlášku a vrátí, zda je hráč přihlášený,
--- nebo náhradník (a kolikátý v pořadí).
+-- Jediný vstup pro frontend: uloží přihlášku a vrátí 'registered' (má místo),
+-- nebo 'waitlist' (náhradník).
 create or replace function public.register_for_event(
   target_event_slug text,
   full_name text,
-  email text,
-  source_url text default null,
-  user_agent text default null
+  email text
 )
-returns jsonb
+returns text
 language plpgsql
 security definer
 set search_path = public, pg_catalog
 as $$
 declare
-  inserted public.event_registrations%rowtype;
-  waitlist_position integer;
+  inserted_status text;
 begin
   if target_event_slug <> 'krvava-hodina-2026-10-20' then
     raise exception
@@ -144,31 +138,15 @@ begin
         message = 'EVENT_NOT_AVAILABLE';
   end if;
 
-  insert into public.event_registrations (
-    event_slug, full_name, email, source_url, user_agent
-  )
+  insert into public.event_registrations (event_slug, full_name, email)
   values (
     target_event_slug,
     trim(register_for_event.full_name),
-    trim(register_for_event.email),
-    left(register_for_event.source_url, 500),
-    left(register_for_event.user_agent, 500)
+    trim(register_for_event.email)
   )
-  returning * into inserted;
+  returning status into inserted_status;
 
-  if inserted.status = 'waitlist' then
-    select count(*)
-      into waitlist_position
-      from public.event_registrations r
-     where r.event_slug = inserted.event_slug
-       and r.status = 'waitlist'
-       and (r.created_at, r.id) <= (inserted.created_at, inserted.id);
-  end if;
-
-  return jsonb_build_object(
-    'status', inserted.status,
-    'waitlist_position', waitlist_position
-  );
+  return inserted_status;
 end;
 $$;
 
@@ -193,23 +171,13 @@ order by event_slug, status, created_at, id;
 
 alter table public.event_registrations enable row level security;
 
+-- Veřejnost zapisuje jen přes register_for_event, přímo do tabulky nesmí.
 revoke all on table public.event_registrations from anon, authenticated;
-grant insert on table public.event_registrations to anon, authenticated;
 grant execute on function public.get_event_registration_status(text) to anon, authenticated;
-revoke all on function public.register_for_event(text, text, text, text, text) from public;
-grant execute on function public.register_for_event(text, text, text, text, text) to anon, authenticated;
+revoke all on function public.register_for_event(text, text, text) from public;
+grant execute on function public.register_for_event(text, text, text) to anon, authenticated;
 revoke all on table public.event_registration_order from anon, authenticated;
 
 drop policy if exists "Public can insert event registrations" on public.event_registrations;
-
-create policy "Public can insert event registrations"
-  on public.event_registrations
-  for insert
-  to anon, authenticated
-  with check (
-    event_slug = 'krvava-hodina-2026-10-20'
-    and char_length(trim(full_name)) between 2 and 120
-    and email::text ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'
-  );
 
 commit;

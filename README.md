@@ -7,8 +7,8 @@ Jednostránková registrační stránka pro akci **Krvavá hodina**. Je navržen
 - minimalistická landing page v temném stylu s akcentem na Blood on the Clocktower
 - formulář pro uložení `jméno + e-mail` do Supabase
 - po naplnění kapacity 15 lidí se další zájemci přihlašují jako náhradníci
-- ochrana přes RLS, takže veřejný klient může pouze vkládat registrace
-- placeholder kontakt, kam si doplníš vlastní Facebook URL
+- veřejný klient se může jen přihlásit přes funkci `register_for_event`,
+  tabulku nečte ani do ní přímo nezapisuje
 
 ## Soubory
 
@@ -16,7 +16,7 @@ Jednostránková registrační stránka pro akci **Krvavá hodina**. Je navržen
 - `full.html`: stará adresa stránky „plno“, přesměruje na `index.html`
 - `styles.css`: vzhled
 - `app.js`: Supabase klient a odeslání formuláře
-- `supabase.sql`: SQL pro vytvoření tabulky a policy
+- `supabase.sql`: SQL pro vytvoření tabulky a funkcí
 
 ## Nastavení Supabase
 
@@ -45,8 +45,8 @@ Výsledek má mít limit 15 a počet registrací jen pro říjnový termín.
 ## Náhradníci
 
 Po obsazení 15 míst formulář zůstává, jen se z něj stane přihláška náhradníka.
-Uživatel uvidí, že je přihlášený jako náhradník (a kolikátý v pořadí) a že mu
-dáme e-mailem vědět, až se uvolní místo.
+Uživatel uvidí, že je přihlášený jako náhradník a že mu dáme e-mailem vědět,
+až se uvolní místo. Počet náhradníků se veřejně nezobrazuje.
 
 - Sloupec `status` v `event_registrations`: `registered` = má místo,
   `waitlist` = náhradník. Stav určuje databáze, ne prohlížeč.
@@ -70,21 +70,10 @@ set status = 'registered'
 where id = '<id prvního náhradníka>';
 ```
 
-E-maily se zatím posílají ručně. Automatické upozornění by šlo doplnit přes
-Supabase Edge Function.
+E-maily se posílají ručně. Po přihlášení web ukáže, že kdo nemůže dorazit, má
+dát vědět na Facebooku nebo e-mailem (`CANCEL_COPY` v `app.js`).
 
-Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na RLS policy v databázi. Nepoužívej ve frontendu service role key.
-
-## Co si ještě upravit
-
-V `app.js` změň tyto konstanty:
-
-```js
-const CONTACT_URL = "#";
-const CONTACT_LABEL = "Doplnit Facebook URL";
-```
-
-Jakmile doplníš reálný odkaz, tlačítko v kontaktu začne fungovat jako externí link.
+Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na právech v databázi: veřejnost smí jen volat dvě funkce. Nepoužívej ve frontendu service role key.
 
 ## GitHub Pages
 
