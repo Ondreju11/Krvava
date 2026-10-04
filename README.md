@@ -6,14 +6,14 @@ Jednostránková registrační stránka pro akci **Krvavá hodina**. Je navržen
 
 - minimalistická landing page v temném stylu s akcentem na Blood on the Clocktower
 - formulář pro uložení `jméno + e-mail` do Supabase
-- automatické ukončení registrace po naplnění kapacity 15 lidí
+- po naplnění kapacity 15 lidí se další zájemci přihlašují jako náhradníci
 - ochrana přes RLS, takže veřejný klient může pouze vkládat registrace
 - placeholder kontakt, kam si doplníš vlastní Facebook URL
 
 ## Soubory
 
 - `index.html`: obsah stránky
-- `full.html`: stav po naplnění kapacity
+- `full.html`: stará adresa stránky „plno“, přesměruje na `index.html`
 - `styles.css`: vzhled
 - `app.js`: Supabase klient a odeslání formuláře
 - `supabase.sql`: SQL pro vytvoření tabulky a policy
@@ -41,6 +41,37 @@ select public.get_event_registration_status('krvava-hodina-2026-10-20');
 ```
 
 Výsledek má mít limit 15 a počet registrací jen pro říjnový termín.
+
+## Náhradníci
+
+Po obsazení 15 míst formulář zůstává, jen se z něj stane přihláška náhradníka.
+Uživatel uvidí, že je přihlášený jako náhradník (a kolikátý v pořadí) a že mu
+dáme e-mailem vědět, až se uvolní místo.
+
+- Sloupec `status` v `event_registrations`: `registered` = má místo,
+  `waitlist` = náhradník. Stav určuje databáze, ne prohlížeč.
+- `created_at` nastavuje databáze ve chvíli zápisu, takže odpovídá skutečnému
+  pořadí přihlášení.
+- Pořadí uvidíš ve view `event_registration_order` (sloupec `poradi` se počítá
+  zvlášť pro přihlášené a pro náhradníky):
+
+```sql
+select status, poradi, full_name, email, created_at
+from public.event_registration_order
+where event_slug = 'krvava-hodina-2026-10-20';
+```
+
+Když se někdo odhlásí, smaž jeho řádek a prvního náhradníka posuň mezi
+přihlášené. Pak mu pošli e-mail:
+
+```sql
+update public.event_registrations
+set status = 'registered'
+where id = '<id prvního náhradníka>';
+```
+
+E-maily se zatím posílají ručně. Automatické upozornění by šlo doplnit přes
+Supabase Edge Function.
 
 Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na RLS policy v databázi. Nepoužívej ve frontendu service role key.
 
