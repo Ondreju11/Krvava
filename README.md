@@ -71,7 +71,7 @@ where id = '<id prvního náhradníka>';
 ```
 
 E-maily se posílají ručně. Po přihlášení web ukáže, že kdo nemůže dorazit, má
-dát vědět na Facebooku nebo e-mailem (`CANCEL_COPY` v `app.js`).
+dát vědět na Facebooku nebo e-mailem (`signup-done-note` v `index.html`).
 
 Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na právech v databázi: veřejnost smí jen volat dvě funkce. Nepoužívej ve frontendu service role key.
 
