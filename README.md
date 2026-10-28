@@ -73,6 +73,24 @@ where id = '<id prvního náhradníka>';
 E-maily se posílají ručně. Po přihlášení web ukáže, že kdo nemůže dorazit, má
 dát vědět na Facebooku nebo e-mailem (`signup-done-note` v `index.html`).
 
+## Bowling
+
+Složka `bowling/` je samostatná přihláška na bowling 11. 11. 2026
+(identifikátor `bowling-2026-11-11`, kapacita 16), cílová adresa
+`https://akce.psynaffuk.cz/bowling/` (v `Psyna_kalendar` jako `public/bowling`).
+Používá stejnou tabulku jako Krvavá hodina. Po přihlášení ukáže QR Platbu
+(180 Kč, zpráva „Jméno Příjmení - bowling“ bez diakritiky). Po naplnění
+kapacity formulář zmizí a stránka odkáže na čekačku přes Instagram @misa._.pulp.
+
+Kapacity všech akcí jsou ve funkci `event_registration_limit` v `supabase.sql`.
+Seznam přihlášených:
+
+```sql
+select poradi, full_name, email, created_at
+from public.event_registration_order
+where event_slug = 'bowling-2026-11-11' and status = 'registered';
+```
+
 Použitý frontend klíč je publishable key, což je pro veřejný frontend v pořádku. Bezpečnost stojí na právech v databázi: veřejnost smí jen volat dvě funkce. Nepoužívej ve frontendu service role key.
 
 ## GitHub Pages

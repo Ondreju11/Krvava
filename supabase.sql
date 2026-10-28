@@ -1,4 +1,5 @@
--- Opakování 20. 10. 2026 v 18:15 (Europe/Prague), kapacita 15.
+-- Krvavá hodina 20. 10. 2026 v 18:15 (Europe/Prague), kapacita 15.
+-- Bowling 11. 11. 2026 v 19:00, kapacita 16. Kapacity jsou v event_registration_limit.
 -- Po naplnění kapacity se další přihlášky ukládají jako náhradníci (status = 'waitlist').
 -- Spouštěj celý skript. Starší registrace zůstávají uložené pod původním event_slug.
 begin;
@@ -35,6 +36,19 @@ alter table public.event_registrations
 create index if not exists event_registrations_event_status_created_idx
   on public.event_registrations (event_slug, status, created_at, id);
 
+-- Akce, na které se dá přihlásit, a jejich kapacita. Neznámá akce = null.
+create or replace function public.event_registration_limit(target_event_slug text)
+returns integer
+language sql
+immutable
+set search_path = public, pg_catalog
+as $$
+  select case target_event_slug
+    when 'krvava-hodina-2026-10-20' then 15
+    when 'bowling-2026-11-11' then 16
+  end;
+$$;
+
 create or replace function public.enforce_event_registration_limit()
 returns trigger
 language plpgsql
@@ -42,7 +56,7 @@ security definer
 set search_path = public, pg_catalog
 as $$
 declare
-  registration_limit constant integer := 15;
+  registration_limit integer := public.event_registration_limit(new.event_slug);
   registration_count integer;
 begin
   perform pg_advisory_xact_lock(hashtext(new.event_slug));
@@ -90,10 +104,10 @@ security definer
 set search_path = public, pg_catalog
 as $$
 declare
-  registration_limit constant integer := 15;
+  registration_limit integer := public.event_registration_limit(target_event_slug);
   registered_count integer;
 begin
-  if target_event_slug <> 'krvava-hodina-2026-10-20' then
+  if registration_limit is null then
     raise exception
       using
         errcode = 'P0001',
@@ -131,7 +145,7 @@ as $$
 declare
   inserted_status text;
 begin
-  if target_event_slug <> 'krvava-hodina-2026-10-20' then
+  if public.event_registration_limit(target_event_slug) is null then
     raise exception
       using
         errcode = 'P0001',
